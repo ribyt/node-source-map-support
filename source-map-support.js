@@ -100,36 +100,55 @@ function retrieveSourceMapURL(source) {
   var fileData;
 
   if (isInBrowser()) {
-       var xhr = new XMLHttpRequest();
-       xhr.open('GET', source, false);
-       xhr.send(null);
+      var promise = new Promise (function(resolve, reject){
+          var xhr = new XMLHttpRequest();
+          xhr.open('GET', source, true);
+          xhr.onload = function(e) {
+              if (xhr.readyState === 4) {
+                  if (xhr.status === 200) {
+                      return resolve(xhr);
+                  } else {
+                      return reject(xhr);
+                  }
+              } else {
+                  return reject(xhr);
+              }
+          };
+          xhr.onerror = function(e) {
+              return reject(e);
+          };
+          xhr.send(null);
+      });
 
-       if(xhr.readyState !== 4){
-           return null
-       }
-       if(xhr.status !== 200){
-           return null;
-       }
+      promise().then(function(xhr){
+          fileData = xhr.responseText;
 
-       fileData = xhr.responseText;
+          // Support providing a sourceMappingURL via the SourceMap header
+          var sourceMapHeader = xhr.getResponseHeader("SourceMap") ||
+                                xhr.getResponseHeader("X-SourceMap");
+          if (sourceMapHeader) {
+            return sourceMapHeader;
+          }
 
-       // Support providing a sourceMappingURL via the SourceMap header
-       var sourceMapHeader = xhr.getResponseHeader("SourceMap") ||
-                             xhr.getResponseHeader("X-SourceMap");
-       if (sourceMapHeader) {
-         return sourceMapHeader;
-       }
+          return getSourceMap();
+      }).catch(function(err){
+          return null;
+      });
   }
 
-  // Get the URL of the source map
-  fileData = retrieveFile(source);
-  var re = /(?:\/\/[@#][ \t]+sourceMappingURL=([^\s'"]+?)[ \t]*$)|(?:\/\*[@#][ \t]+sourceMappingURL=([^\*]+?)[ \t]*(?:\*\/)[ \t]*$)/mg;
-  // Keep executing the search to find the *last* sourceMappingURL to avoid
-  // picking up sourceMappingURLs from comments, strings, etc.
-  var lastMatch, match;
-  while (match = re.exec(fileData)) lastMatch = match;
-  if (!lastMatch) return null;
-  return lastMatch[1];
+  return getSourceMap();
+
+  function getSourceMap () {
+      // Get the URL of the source map
+      fileData = retrieveFile(source);
+      var re = /(?:\/\/[@#][ \t]+sourceMappingURL=([^\s'"]+?)[ \t]*$)|(?:\/\*[@#][ \t]+sourceMappingURL=([^\*]+?)[ \t]*(?:\*\/)[ \t]*$)/mg;
+      // Keep executing the search to find the *last* sourceMappingURL to avoid
+      // picking up sourceMappingURLs from comments, strings, etc.
+      var lastMatch, match;
+      while (match = re.exec(fileData)) lastMatch = match;
+      if (!lastMatch) return null;
+      return lastMatch[1];
+  }
 };
 
 // Can be overridden by the retrieveSourceMap option to install. Takes a
