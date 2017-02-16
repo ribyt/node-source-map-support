@@ -101,6 +101,7 @@ function retrieveSourceMapURL ( source ) {
         var promise = new Promise( function ( resolve, reject ) {
             var xhr = new XMLHttpRequest();
             xhr.open( 'GET', source, true );
+
             xhr.onload = function ( e ) {
                 if ( xhr.readyState === 4 ) {
                     if ( xhr.status === 200 ) {
