@@ -1,0 +1,21 @@
+{
+  "name": "browser-source-map-support",
+  "description": "Fixes stack traces for files with source maps",
+  "main": "./browser-source-map-support.js",
+  "authors": [
+    "Nicholas Smith <nicksmith.biz@gmail.com>"
+  ],
+  "license": "MIT",
+  "keywords": [
+    "browser",
+    "source-map"
+  ],
+  "homepage": "https://github.com/thenickofnicks/node-source-map-support",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
