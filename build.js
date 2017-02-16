@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+    // #!/usr/bin/env node
 
 var fs = require( 'fs' );
 var path = require( 'path' );
@@ -41,7 +41,7 @@ run( browserify + ' .temp.js', function ( error, stdout ) {
     } ) );
     run( 'curl -d @.temp.js "http://closure-compiler.appspot.com/compile"', function ( error, stdout ) {
         if ( error ) throw error;
-    // var code = header + '\n' + stdout;
+        var code = header + '\n' + stdout;
         fs.unlinkSync( '.temp.js' );
         fs.writeFileSync( 'browser-source-map-support.js', code );
         fs.writeFileSync( 'amd-test/browser-source-map-support.js', code );

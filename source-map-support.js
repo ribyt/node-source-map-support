@@ -94,60 +94,47 @@ function supportRelativeURL ( file, url ) {
     return protocol + path.resolve( dir.slice( protocol.length ), url );
 }
 
+function testSameOrigin ( url ) {
+    var loc = window.location;
+    var a = document.createElement('a');
+
+    a.href = url;
+
+    return a.hostname == loc.hostname &&
+           a.port == loc.port &&
+           a.protocol == loc.protocol;
+}
+
 function retrieveSourceMapURL ( source ) {
     var fileData;
 
     if ( isInBrowser() ) {
-        var promise = new Promise( function ( resolve, reject ) {
-            var xhr = new XMLHttpRequest();
-            xhr.open( 'GET', source, true );
-
-            xhr.onload = function ( e ) {
-                if ( xhr.readyState === 4 ) {
-                    if ( xhr.status === 200 ) {
-                        return resolve( xhr );
-                    } else {
-                        return reject( xhr );
-                    }
-                } else {
-                    return reject( xhr );
-                }
-            };
-            xhr.onerror = function ( e ) {
-                return reject( e );
-            };
-            xhr.send( null );
-        } );
-
-        promise().then( function ( xhr ) {
-            fileData = xhr.responseText;
-
-          // Support providing a sourceMappingURL via the SourceMap header
-            var sourceMapHeader = xhr.getResponseHeader( 'SourceMap' ) ||
-                                xhr.getResponseHeader( 'X-SourceMap' );
-            if ( sourceMapHeader ) {
-                return sourceMapHeader;
-            }
-
-            return getSourceMap();
-        } ).catch( function ( err ) {
+        if ( !testSameOrigin( source ) ) {
             return null;
-        } );
+        }
+
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', source, false);
+        xhr.send(null);
+        fileData = xhr.readyState === 4 ? xhr.responseText : null;
+
+        // Support providing a sourceMappingURL via the SourceMap header
+        var sourceMapHeader = xhr.getResponseHeader("SourceMap") ||
+                             xhr.getResponseHeader("X-SourceMap");
+        if (sourceMapHeader) {
+            return sourceMapHeader;
+        }
     }
 
-    return getSourceMap();
-
-    function getSourceMap () {
-      // Get the URL of the source map
-        fileData = retrieveFile( source );
-        var re = /(?:\/\/[@#][ \t]+sourceMappingURL=([^\s'"]+?)[ \t]*$)|(?:\/\*[@#][ \t]+sourceMappingURL=([^\*]+?)[ \t]*(?:\*\/)[ \t]*$)/mg;
-      // Keep executing the search to find the *last* sourceMappingURL to avoid
-      // picking up sourceMappingURLs from comments, strings, etc.
-        var lastMatch, match;
-        while ( match = re.exec( fileData ) ) lastMatch = match;
-        if ( !lastMatch ) return null;
-        return lastMatch[1];
-    }
+    // Get the URL of the source map
+    fileData = retrieveFile( source );
+    var re = /(?:\/\/[@#][ \t]+sourceMappingURL=([^\s'"]+?)[ \t]*$)|(?:\/\*[@#][ \t]+sourceMappingURL=([^\*]+?)[ \t]*(?:\*\/)[ \t]*$)/mg;
+    // Keep executing the search to find the *last* sourceMappingURL to avoid
+    // picking up sourceMappingURLs from comments, strings, etc.
+    var lastMatch, match;
+    while ( match = re.exec( fileData ) ) lastMatch = match;
+    if ( !lastMatch ) return null;
+    return lastMatch[1];
 };
 
 // Can be overridden by the retrieveSourceMap option to install. Takes a
